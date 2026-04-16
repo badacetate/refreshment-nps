@@ -818,24 +818,7 @@ async function fetchSuggestions() {
   }, 1500);
 }
 
-      state.beers.unshift({
-        id: createId(),
-        company: company,
-        beer_name: beerName,
-        thumbnail: thumbnail
-      });
-
-      saveState();
-      renderAll();
-
-      els.beerForm.reset();
-      els.beerFormMessage.textContent = 'Added ' + beerName + '.';
-      els.beerFormMessage.classList.remove('hidden');
-
-      setTimeout(function() {
-        els.beerFormMessage.classList.add('hidden');
-      }, 1800);
-    }
+    
 
     function submitSuggestion(event) {
       event.preventDefault();
