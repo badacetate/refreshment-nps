@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beer Ratings MVP</title>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #667085;
+      --accent: #0f172a;
+      --danger: #dc2626;
+      --ok: #15803d;
+      --border: #e4e7ec;
+      --shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px;
+      padding-bottom: 80px;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(245, 247, 250, 0.94);
+      backdrop-filter: blur(8px);
+      padding: 12px 0 16px;
+      margin-bottom: 8px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-top: 6px;
+    }
+
+    .chip {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .search {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      padding: 14px 14px;
+      border-radius: 14px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .search:focus,
+    input:focus,
+    button:focus {
+      outline: 2px solid rgba(15, 23, 42, 0.12);
+      outline-offset: 2px;
+    }
+
+    .beer-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .beer-card {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    }
+
+    .beer-card:hover {
+      transform: translateY(-1px);
+      border-color: #d0d5dd;
+      background: #f8fafc;
+    }
+
+    .thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
+      object-fit: cover;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+    }
+
+    .beer-name {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .beer-company {
+      color: var(--muted);
+      font-size: 0.94rem;
+      margin-bottom: 8px;
+    }
+
+    .small-meta {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .hidden { display: none !important; }
+
+    .rating-wrap {
+      display: grid;
+      gap: 14px;
+    }
+
+    .selected-beer {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .selected-thumb {
+      width: 92px;
+      height: 92px;
+      border-radius: 18px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    .rating-buttons {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    .rate-btn,
+    .btn,
+    .sort-btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 12px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .rate-btn {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-weight: 700;
+      min-height: 56px;
+    }
+
+    .rate-btn:hover { background: #f8fafc; }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+    }
+
+    .btn.secondary {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn.danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .sort-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .sort-btn {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      font-size: 0.9rem;
+    }
+
+    .sort-btn.active {
+      border-color: #cbd5e1;
+      color: var(--text);
+      background: #f8fafc;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 0.92rem;
+      color: var(--text);
+    }
+
+    input {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      padding: 14px 14px;
+      border-radius: 14px;
+      font-size: 1rem;
+    }
+
+    .success {
+      background: #ecfdf3;
+      border: 1px solid #abefc6;
+      color: #067647;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-align: center;
+      margin-top: 14px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 14px 0;
+    }
+
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .admin-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .empty-state {
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      padding: 20px 16px;
+      color: var(--muted);
+      background: #f8fafc;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .home-help {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .admin-help {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.36);
+    }
+
+    .modal-card {
+      position: relative;
+      width: 100%;
+      max-width: 560px;
+      margin: 0;
+      z-index: 1;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .suggestion-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .suggestion-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+
+    .suggestion-date {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 560px) {
+      .selected-beer,
+      .beer-card { grid-template-columns: 1fr; }
+
+      .thumb,
+      .selected-thumb {
+        width: 100%;
+        height: 180px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="title-row">
+        <div>
+          <h1>Refreshment NPS</h1>
+          <div class="subtitle">Try beers, rate them... profit!</div>
+        </div>
+        <button id="adminToggleBtn" class="chip" type="button">Add Beer</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="beersTabBtn" class="tab-btn active" type="button">Beers</button>
+      <button id="suggestionsTabBtn" class="tab-btn" type="button">Suggestions</button>
+    </div>
+
+    <section id="beersTab" class="tab-panel">
+      <section id="userView" class="panel">
+        <div class="top-actions">
+          <strong>Rate a beer</strong>
+          <span id="beerCountLabel" class="muted"></span>
+        </div>
+
+        <input id="searchInput" class="search" type="text" placeholder="Search by company or beer name" />
+        <div id="ratingSuccess" class="success hidden"></div>
+        <div class="home-help">Search and browse the list, then tap a beer to rate it.</div>
+        <div id="beerList" class="beer-list"></div>
+      </section>
+    </section>
+
+    <section id="suggestionsTab" class="tab-panel hidden">
+      <div class="panel">
+        <strong>Suggest a beer</strong>
+        <div class="subtitle">What should we order next?</div>
+        <div class="divider"></div>
+        <form id="suggestionForm" class="form-grid">
+          <label>
+            Suggestion
+            <input id="suggestionInput" type="text" placeholder="e.g. Local IPA, Guinness, Sapporo" required />
+          </label>
+          <button class="btn secondary" type="submit">Submit suggestion</button>
+          <div id="suggestionMessage" class="success hidden"></div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="top-actions">
+          <strong>Suggestions</strong>
+          <span id="suggestionCountLabel" class="muted"></span>
+        </div>
+        <div id="suggestionList" class="suggestion-list"></div>
+      </div>
+    </section>
+
+    <section id="ratingView" class="panel hidden">
+      <div class="rating-wrap">
+        <button id="backToListBtn" class="btn secondary" type="button">Back to list</button>
+        <div id="selectedBeerContainer" class="selected-beer"></div>
+        <div>
+          <strong>Choose a rating</strong>
+          <div class="subtitle">1 = bad, 5 = great</div>
+        </div>
+        <div class="rating-buttons" id="ratingButtons"></div>
+        <div id="singleRateSuccess" class="success hidden"></div>
+      </div>
+    </section>
+
+    <div id="addBeerModal" class="modal hidden">
+      <div class="modal-backdrop" id="modalBackdrop"></div>
+      <div class="modal-card panel">
+        <div class="top-actions">
+          <strong>Add beer</strong>
+          <button id="closeModalBtn" class="btn secondary" type="button">Close</button>
+        </div>
+        <div class="subtitle">Add a beer to the list so people can rate it.</div>
+        <div class="divider"></div>
+        <form id="beerForm" class="form-grid">
+          <label>
+            Company
+            <input id="companyInput" type="text" placeholder="e.g. Duff Breweries" required />
+          </label>
+
+          <label>
+            Beer name
+            <input id="beerNameInput" type="text" placeholder="e.g. Duff Beer" required />
+          </label>
+
+          <label>
+            Thumbnail file name
+            <input id="thumbnailInput" type="text" placeholder="e.g. duff.png" />
+          </label>
+          <div class="admin-help">Optional for now. If used, the image file must be in the same folder as this HTML file.</div>
+
+          <button class="btn" type="submit">Add beer</button>
+          <div id="beerFormMessage" class="success hidden"></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="footer-note">Single-file MVP. Data is stored in your browser for now.</div>
+  </div>
+
+  <script>
+    const STORAGE_KEYS = {
+      beers: 'beerRatingsMvp_beers',
+      ratings: 'beerRatingsMvp_ratings',
+      suggestions: 'beerRatingsMvp_suggestions'
+    };
+
+    
+    const state = {
+      beers: [],
+      ratings: [],
+      suggestions: [],
+      selectedBeerId: null,
+      activeTab: 'beers'
+    };
+
+    const els = {
+      userView: document.getElementById('userView'),
+      beersTab: document.getElementById('beersTab'),
+      suggestionsTab: document.getElementById('suggestionsTab'),
+      beersTabBtn: document.getElementById('beersTabBtn'),
+      suggestionsTabBtn: document.getElementById('suggestionsTabBtn'),
+      ratingView: document.getElementById('ratingView'),
+      addBeerModal: document.getElementById('addBeerModal'),
+      beerList: document.getElementById('beerList'),
+      suggestionList: document.getElementById('suggestionList'),
+      selectedBeerContainer: document.getElementById('selectedBeerContainer'),
+      ratingButtons: document.getElementById('ratingButtons'),
+      searchInput: document.getElementById('searchInput'),
+      backToListBtn: document.getElementById('backToListBtn'),
+      adminToggleBtn: document.getElementById('adminToggleBtn'),
+      closeModalBtn: document.getElementById('closeModalBtn'),
+      modalBackdrop: document.getElementById('modalBackdrop'),
+      beerForm: document.getElementById('beerForm'),
+      companyInput: document.getElementById('companyInput'),
+      beerNameInput: document.getElementById('beerNameInput'),
+      thumbnailInput: document.getElementById('thumbnailInput'),
+      beerFormMessage: document.getElementById('beerFormMessage'),
+      ratingSuccess: document.getElementById('ratingSuccess'),
+      singleRateSuccess: document.getElementById('singleRateSuccess'),
+      beerCountLabel: document.getElementById('beerCountLabel'),
+      suggestionCountLabel: document.getElementById('suggestionCountLabel'),
+      suggestionForm: document.getElementById('suggestionForm'),
+      suggestionInput: document.getElementById('suggestionInput'),
+      suggestionMessage: document.getElementById('suggestionMessage')
+    };
+
+    function createId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEYS.beers, JSON.stringify(state.beers));
+      localStorage.setItem(STORAGE_KEYS.ratings, JSON.stringify(state.ratings));
+      localStorage.setItem(STORAGE_KEYS.suggestions, JSON.stringify(state.suggestions));
+    }
+
+    function loadState() {
+      try {
+        state.beers = JSON.parse(localStorage.getItem(STORAGE_KEYS.beers)) || [];
+        state.ratings = JSON.parse(localStorage.getItem(STORAGE_KEYS.ratings)) || [];
+        state.suggestions = JSON.parse(localStorage.getItem(STORAGE_KEYS.suggestions)) || [];
+      } catch (error) {
+        console.error('Failed to load local data:', error);
+        state.beers = [];
+        state.ratings = [];
+        state.suggestions = [];
+      }
+    }
+
+    function getBeerRatings(beerId) {
+      return state.ratings.filter(function(rating) {
+        return rating.beer_id === beerId;
+      });
+    }
+
+    function getBeerStats(beerId) {
+      const ratings = getBeerRatings(beerId);
+      const count = ratings.length;
+      const average = count === 0
+        ? null
+        : ratings.reduce(function(sum, rating) {
+            return sum + rating.score;
+          }, 0) / count;
+
+      return { average: average, count: count };
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function getImageMarkup(src, alt, className) {
+      if (src && src.trim()) {
+        return '<img class="' + className + '" src="' + escapeHtml(src.trim()) + '" alt="' + escapeHtml(alt) + '">';
+      }
+
+      return '<div class="' + className + '" style="display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:0.8rem;">No image</div>';
+    }
+
+    function renderBeerList() {
+      const query = els.searchInput.value.trim().toLowerCase();
+
+      const sortedBeers = state.beers.slice().sort(function(a, b) {
+        const companyCompare = a.company.localeCompare(b.company);
+        if (companyCompare !== 0) return companyCompare;
+        return a.beer_name.localeCompare(b.beer_name);
+      });
+
+      const filtered = sortedBeers.filter(function(beer) {
+        if (!query) return true;
+        const haystack = (beer.company + ' ' + beer.beer_name).toLowerCase();
+        return haystack.indexOf(query) !== -1;
+      });
+
+      els.beerCountLabel.textContent = filtered.length + ' beer' + (filtered.length === 1 ? '' : 's');
+
+      if (filtered.length === 0) {
+        els.beerList.innerHTML = '<div class="empty-state">No beers found for that search.</div>';
+        return;
+      }
+
+      els.beerList.innerHTML = filtered.map(function(beer) {
+        const stats = getBeerStats(beer.id);
+        const avgText = stats.average === null ? 'No ratings yet' : stats.average.toFixed(1) + ' avg';
+        const countText = stats.count + ' rating' + (stats.count === 1 ? '' : 's');
+
+        return '' +
+          '<button class="beer-card" type="button" data-beer-id="' + beer.id + '">' +
+            getImageMarkup(beer.thumbnail, beer.beer_name, 'thumb') +
+            '<div style="text-align:left;">' +
+              '<div class="beer-name">' + escapeHtml(beer.beer_name) + '</div>' +
+              '<div class="beer-company">' + escapeHtml(beer.company) + '</div>' +
+              '<div class="small-meta">' + avgText + ' • ' + countText + '</div>' +
+            '</div>' +
+          '</button>';
+      }).join('');
+
+      Array.from(els.beerList.querySelectorAll('[data-beer-id]')).forEach(function(button) {
+        button.addEventListener('click', function() {
+          openRating(button.dataset.beerId);
+        });
+      });
+    }
+
+    function openRating(beerId) {
+      state.selectedBeerId = beerId;
+      const beer = state.beers.find(function(item) {
+        return item.id === beerId;
+      });
+      if (!beer) return;
+
+      els.userView.classList.add('hidden');
+      els.addBeerModal.classList.add('hidden');
+      els.ratingView.classList.remove('hidden');
+      els.singleRateSuccess.classList.add('hidden');
+      els.singleRateSuccess.textContent = '';
+
+      els.selectedBeerContainer.innerHTML = '' +
+        getImageMarkup(beer.thumbnail, beer.beer_name, 'selected-thumb') +
+        '<div>' +
+          '<div class="beer-name" style="font-size:1.2rem;">' + escapeHtml(beer.beer_name) + '</div>' +
+          '<div class="beer-company">' + escapeHtml(beer.company) + '</div>' +
+        '</div>';
+
+      els.ratingButtons.innerHTML = [1, 2, 3, 4, 5].map(function(score) {
+        return '<button class="rate-btn" type="button" data-score="' + score + '">' + score + '</button>';
+      }).join('');
+
+      Array.from(els.ratingButtons.querySelectorAll('[data-score]')).forEach(function(button) {
+        button.addEventListener('click', function() {
+          submitRating(Number(button.dataset.score));
+        });
+      });
+    }
+
+    function submitRating(score) {
+      if (!state.selectedBeerId) return;
+      if (score < 1 || score > 5) return;
+
+      state.ratings.push({
+        id: createId(),
+        beer_id: state.selectedBeerId,
+        score: score
+      });
+
+      saveState();
+      renderAll();
+
+      els.singleRateSuccess.textContent = 'Saved. You rated this beer ' + score + '/5.';
+      els.singleRateSuccess.classList.remove('hidden');
+    }
+
+    function closeRatingView() {
+      state.selectedBeerId = null;
+      els.ratingView.classList.add('hidden');
+      if (state.activeTab === 'beers') {
+        els.beersTab.classList.remove('hidden');
+      } else {
+        els.suggestionsTab.classList.remove('hidden');
+      }
+      els.addBeerModal.classList.add('hidden');
+    }
+
+    function openAdmin() {
+      els.addBeerModal.classList.remove('hidden');
+      els.ratingView.classList.add('hidden');
+    }
+
+    function closeAdmin() {
+      els.addBeerModal.classList.add('hidden');
+    }
+
+    function addBeer(event) {
+      event.preventDefault();
+
+      const company = els.companyInput.value.trim();
+      const beerName = els.beerNameInput.value.trim();
+      const thumbnail = els.thumbnailInput.value.trim();
+
+      if (!company || !beerName) {
+        window.alert('Company and beer name are required.');
+        return;
+      }
+
+      state.beers.unshift({
+        id: createId(),
+        company: company,
+        beer_name: beerName,
+        thumbnail: thumbnail
+      });
+
+      saveState();
+      renderAll();
+
+      els.beerForm.reset();
+      els.beerFormMessage.textContent = 'Added ' + beerName + '.';
+      els.beerFormMessage.classList.remove('hidden');
+
+      setTimeout(function() {
+        els.beerFormMessage.classList.add('hidden');
+      }, 1800);
+    }
+
+    function submitSuggestion(event) {
+      event.preventDefault();
+
+      const value = els.suggestionInput.value.trim();
+      if (!value) return;
+
+      state.suggestions.unshift({
+        id: createId(),
+        text: value,
+        created_at: new Date().toISOString()
+      });
+
+      saveState();
+      renderSuggestions();
+
+      els.suggestionInput.value = '';
+      els.suggestionMessage.textContent = 'Suggestion saved.';
+      els.suggestionMessage.classList.remove('hidden');
+
+      setTimeout(function() {
+        els.suggestionMessage.classList.add('hidden');
+      }, 1800);
+    }
+
+    function formatSuggestionDate(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Unknown date';
+      return date.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    function renderSuggestions() {
+      const suggestions = state.suggestions.slice();
+      els.suggestionCountLabel.textContent = suggestions.length + ' suggestion' + (suggestions.length === 1 ? '' : 's');
+
+      if (suggestions.length === 0) {
+        els.suggestionList.innerHTML = '<div class="empty-state">No suggestions yet.</div>';
+        return;
+      }
+
+      els.suggestionList.innerHTML = suggestions.map(function(item) {
+        return '' +
+          '<div class="suggestion-card">' +
+            '<div>' + escapeHtml(item.text) + '</div>' +
+            '<div class="suggestion-date">' + formatSuggestionDate(item.created_at) + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      const isBeers = tabName === 'beers';
+
+      els.beersTab.classList.toggle('hidden', !isBeers);
+      els.suggestionsTab.classList.toggle('hidden', isBeers);
+      els.beersTabBtn.classList.toggle('active', isBeers);
+      els.suggestionsTabBtn.classList.toggle('active', !isBeers);
+      els.addBeerModal.classList.add('hidden');
+      els.ratingView.classList.add('hidden');
+    }
+
+    function seedInitialData() {
+      // Intentionally empty for real setup.
+      // Supabase will become the source of truth.
+    }
+
+    function renderAll() {
+      renderBeerList();
+      renderSuggestions();
+    }
+
+    function bindEvents() {
+      els.searchInput.addEventListener('input', renderBeerList);
+      els.backToListBtn.addEventListener('click', closeRatingView);
+      els.adminToggleBtn.addEventListener('click', function() {
+        openAdmin();
+      });
+      els.closeModalBtn.addEventListener('click', closeAdmin);
+      els.modalBackdrop.addEventListener('click', closeAdmin);
+      els.beerForm.addEventListener('submit', addBeer);
+      els.suggestionForm.addEventListener('submit', submitSuggestion);
+      els.beersTabBtn.addEventListener('click', function() {
+        switchTab('beers');
+      });
+      els.suggestionsTabBtn.addEventListener('click', function() {
+        switchTab('suggestions');
+      });
+    }
+
+    function init() {
+      loadState();
+      seedInitialData();
+      bindEvents();
+      renderAll();
+      switchTab('beers');
+    }
+
+    init();
+  </script>
+</body>
+</html>
