@@ -492,10 +492,10 @@
           </label>
 
           <label>
-            Thumbnail file name
-            <input id="thumbnailInput" type="text" placeholder="e.g. duff.png" />
-          </label>
-          <div class="admin-help">Optional for now. If used, the image file must be in the same folder as this HTML file.</div>
+  Thumbnail image
+  <input id="thumbnailInput" type="file" accept="image/*" />
+</label>
+<div class="admin-help">Optional. Upload an image and it will be stored with the beer.</div>
 
           <button class="btn" type="submit">Add beer</button>
           <div id="beerFormMessage" class="success hidden"></div>
@@ -678,6 +678,33 @@ async function fetchSuggestions() {
       return '<div class="' + className + '" style="display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:0.8rem;">No image</div>';
     }
 
+    async function uploadBeerImage(file) {
+  if (!file) return null;
+
+  const extension = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const filePath = 'beer-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + extension;
+
+  const { error: uploadError } = await supabaseClient
+    .storage
+    .from('beer-images')
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
+
+  if (uploadError) {
+    console.error('Error uploading image:', uploadError);
+    throw uploadError;
+  }
+
+  const { data } = supabaseClient
+    .storage
+    .from('beer-images')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
     function renderBeerList() {
       const query = els.searchInput.value.trim().toLowerCase();
 
@@ -807,11 +834,24 @@ async function submitRating(score) {
 
   const company = els.companyInput.value.trim();
   const beerName = els.beerNameInput.value.trim();
-  const thumbnail = els.thumbnailInput.value.trim();
+  const imageFile = els.thumbnailInput.files && els.thumbnailInput.files[0]
+    ? els.thumbnailInput.files[0]
+    : null;
 
   if (!company || !beerName) {
     alert('Company and beer name are required.');
     return;
+  }
+
+  let thumbnailUrl = null;
+
+  if (imageFile) {
+    try {
+      thumbnailUrl = await uploadBeerImage(imageFile);
+    } catch (error) {
+      alert('Image upload failed');
+      return;
+    }
   }
 
   const { error } = await supabaseClient
@@ -820,7 +860,7 @@ async function submitRating(score) {
       {
         company: company,
         beer_name: beerName,
-        thumbnail_url: thumbnail || null
+        thumbnail_url: thumbnailUrl
       }
     ]);
 
@@ -830,13 +870,12 @@ async function submitRating(score) {
     return;
   }
 
-  // clear form + feedback
   els.beerForm.reset();
   els.beerFormMessage.textContent = 'Beer added.';
   els.beerFormMessage.classList.remove('hidden');
 
-  // refresh list from Supabase
   await fetchBeers();
+  closeAdmin();
 
   setTimeout(function() {
     els.beerFormMessage.classList.add('hidden');
