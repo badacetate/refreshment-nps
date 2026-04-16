@@ -777,17 +777,46 @@ async function fetchSuggestions() {
       els.addBeerModal.classList.add('hidden');
     }
 
-    function addBeer(event) {
-      event.preventDefault();
+    async function addBeer(event) {
+  event.preventDefault();
 
-      const company = els.companyInput.value.trim();
-      const beerName = els.beerNameInput.value.trim();
-      const thumbnail = els.thumbnailInput.value.trim();
+  const company = els.companyInput.value.trim();
+  const beerName = els.beerNameInput.value.trim();
+  const thumbnail = els.thumbnailInput.value.trim();
 
-      if (!company || !beerName) {
-        window.alert('Company and beer name are required.');
-        return;
+  if (!company || !beerName) {
+    alert('Company and beer name are required.');
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from('beers')
+    .insert([
+      {
+        company: company,
+        beer_name: beerName,
+        thumbnail_url: thumbnail || null
       }
+    ]);
+
+  if (error) {
+    console.error('Error adding beer:', error);
+    alert('Failed to add beer');
+    return;
+  }
+
+  // clear form + feedback
+  els.beerForm.reset();
+  els.beerFormMessage.textContent = 'Beer added.';
+  els.beerFormMessage.classList.remove('hidden');
+
+  // refresh list from Supabase
+  await fetchBeers();
+
+  setTimeout(function() {
+    els.beerFormMessage.classList.add('hidden');
+  }, 1500);
+}
 
       state.beers.unshift({
         id: createId(),
