@@ -506,7 +506,21 @@
     <div class="footer-note">Single-file MVP. Data is stored in your browser for now.</div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <script>
+    const SUPABASE_URL = "https://xwkkekxdbeppidkatatj.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_P4bVGwX20du6kRrJeKdBKQ__elCJgXF";
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function testSupabase() {
+      const { data, error } = await supabase
+        .from('beers')
+        .select('*');
+      console.log('TEST BEERS:', data, error);
+    }
+    
     const STORAGE_KEYS = {
       beers: 'beerRatingsMvp_beers',
       ratings: 'beerRatingsMvp_ratings',
@@ -853,6 +867,7 @@
       bindEvents();
       renderAll();
       switchTab('beers');
+      testSupabase();
     }
 
     init();
