@@ -780,15 +780,18 @@ async function submitRating(score) {
 }
 
     function closeRatingView() {
-      state.selectedBeerId = null;
-      els.ratingView.classList.add('hidden');
-      if (state.activeTab === 'beers') {
-        els.beersTab.classList.remove('hidden');
-      } else {
-        els.suggestionsTab.classList.remove('hidden');
-      }
-      els.addBeerModal.classList.add('hidden');
-    }
+  state.selectedBeerId = null;
+  els.ratingView.classList.add('hidden');
+  els.userView.classList.remove('hidden');
+
+  if (state.activeTab === 'beers') {
+    els.beersTab.classList.remove('hidden');
+  } else {
+    els.suggestionsTab.classList.remove('hidden');
+  }
+
+  els.addBeerModal.classList.add('hidden');
+}
 
     function openAdmin() {
       els.addBeerModal.classList.remove('hidden');
