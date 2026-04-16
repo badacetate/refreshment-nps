@@ -818,31 +818,38 @@ async function fetchSuggestions() {
   }, 1500);
 }
 
+    async function submitSuggestion(event) {
+  event.preventDefault();
+
+  const value = els.suggestionInput.value.trim();
+  if (!value) return;
+
+  const { error } = await supabaseClient
+    .from('suggestions')
+    .insert([
+      {
+        text: value
+      }
+    ]);
+
+  if (error) {
+    console.error('Error adding suggestion:', error);
+    alert('Failed to save suggestion');
+    return;
+  }
+
+  await fetchSuggestions();
+
+  els.suggestionInput.value = '';
+  els.suggestionMessage.textContent = 'Suggestion saved.';
+  els.suggestionMessage.classList.remove('hidden');
+
+  setTimeout(function() {
+    els.suggestionMessage.classList.add('hidden');
+  }, 1800);
+}
+
     
-
-    function submitSuggestion(event) {
-      event.preventDefault();
-
-      const value = els.suggestionInput.value.trim();
-      if (!value) return;
-
-      state.suggestions.unshift({
-        id: createId(),
-        text: value,
-        created_at: new Date().toISOString()
-      });
-
-      saveState();
-      renderSuggestions();
-
-      els.suggestionInput.value = '';
-      els.suggestionMessage.textContent = 'Suggestion saved.';
-      els.suggestionMessage.classList.remove('hidden');
-
-      setTimeout(function() {
-        els.suggestionMessage.classList.add('hidden');
-      }, 1800);
-    }
 
     function formatSuggestionDate(value) {
       const date = new Date(value);
