@@ -559,6 +559,20 @@ async function fetchSuggestions() {
   state.suggestions = data || [];
   renderSuggestions();
 }
+
+    async function fetchRatings() {
+  const { data, error } = await supabaseClient
+    .from('ratings')
+    .select('*');
+
+  if (error) {
+    console.error('Error fetching ratings:', error);
+    return;
+  }
+
+  state.ratings = data || [];
+  renderBeerList();
+}
     
     const STORAGE_KEYS = {
       beers: 'beerRatingsMvp_beers',
@@ -740,22 +754,30 @@ async function fetchSuggestions() {
       });
     }
 
-    function submitRating(score) {
-      if (!state.selectedBeerId) return;
-      if (score < 1 || score > 5) return;
+async function submitRating(score) {
+  if (!state.selectedBeerId) return;
+  if (score < 1 || score > 5) return;
 
-      state.ratings.push({
-        id: createId(),
+  const { error } = await supabaseClient
+    .from('ratings')
+    .insert([
+      {
         beer_id: state.selectedBeerId,
         score: score
-      });
+      }
+    ]);
 
-      saveState();
-      renderAll();
+  if (error) {
+    console.error('Error saving rating:', error);
+    alert('Failed to save rating');
+    return;
+  }
 
-      els.singleRateSuccess.textContent = 'Saved. You rated this beer ' + score + '/5.';
-      els.singleRateSuccess.classList.remove('hidden');
-    }
+  await fetchRatings();
+
+  els.singleRateSuccess.textContent = 'Saved. You rated this beer ' + score + '/5.';
+  els.singleRateSuccess.classList.remove('hidden');
+}
 
     function closeRatingView() {
       state.selectedBeerId = null;
@@ -924,6 +946,7 @@ async function fetchSuggestions() {
   switchTab('beers');
   await fetchBeers();
   await fetchSuggestions();
+  await fetchRatings();
   testSupabase();
 }
 
