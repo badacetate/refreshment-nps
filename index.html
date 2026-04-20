@@ -352,7 +352,7 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 8px;
       margin-bottom: 16px;
     }
@@ -417,6 +417,7 @@
 
     <div class="tabs">
       <button id="beersTabBtn" class="tab-btn active" type="button">Beers</button>
+      <button id="snacksTabBtn" class="tab-btn" type="button">Snacks</button>
       <button id="suggestionsTabBtn" class="tab-btn" type="button">Suggestions</button>
     </div>
 
@@ -436,6 +437,25 @@
         <div id="beerList" class="beer-list"></div>
       </section>
     </section>
+
+    <section id="snacksTab" class="tab-panel hidden">
+  <section id="snacksUserView" class="panel">
+    <div class="top-actions">
+      <strong>Rate a snack</strong>
+      <span class="muted">0 snacks</span>
+    </div>
+
+    <input class="search" type="text" placeholder="Search snacks (coming soon)" />
+
+    <div class="home-help">
+      Snacks tab coming next — same idea as beers.
+    </div>
+
+    <div class="empty-state">
+      No snacks yet.
+    </div>
+  </section>
+</section>
 
     <section id="suggestionsTab" class="tab-panel hidden">
       <div class="panel">
@@ -598,6 +618,8 @@ async function fetchSuggestions() {
       suggestionsTab: document.getElementById('suggestionsTab'),
       beersTabBtn: document.getElementById('beersTabBtn'),
       suggestionsTabBtn: document.getElementById('suggestionsTabBtn'),
+      snacksTab: document.getElementById('snacksTab'),
+      snacksTabBtn: document.getElementById('snacksTabBtn'),
       ratingView: document.getElementById('ratingView'),
       addBeerModal: document.getElementById('addBeerModal'),
       beerList: document.getElementById('beerList'),
@@ -947,16 +969,23 @@ async function submitRating(score) {
     }
 
     function switchTab(tabName) {
-      state.activeTab = tabName;
-      const isBeers = tabName === 'beers';
+  state.activeTab = tabName;
 
-      els.beersTab.classList.toggle('hidden', !isBeers);
-      els.suggestionsTab.classList.toggle('hidden', isBeers);
-      els.beersTabBtn.classList.toggle('active', isBeers);
-      els.suggestionsTabBtn.classList.toggle('active', !isBeers);
-      els.addBeerModal.classList.add('hidden');
-      els.ratingView.classList.add('hidden');
-    }
+  const isBeers = tabName === 'beers';
+  const isSnacks = tabName === 'snacks';
+  const isSuggestions = tabName === 'suggestions';
+
+  els.beersTab.classList.toggle('hidden', !isBeers);
+  els.snacksTab.classList.toggle('hidden', !isSnacks);
+  els.suggestionsTab.classList.toggle('hidden', !isSuggestions);
+
+  els.beersTabBtn.classList.toggle('active', isBeers);
+  els.snacksTabBtn.classList.toggle('active', isSnacks);
+  els.suggestionsTabBtn.classList.toggle('active', isSuggestions);
+
+  els.addBeerModal.classList.add('hidden');
+  els.ratingView.classList.add('hidden');
+}
 
     function seedInitialData() {
       // Intentionally empty for real setup.
@@ -980,6 +1009,9 @@ async function submitRating(score) {
       els.suggestionForm.addEventListener('submit', submitSuggestion);
       els.beersTabBtn.addEventListener('click', function() {
         switchTab('beers');
+      });
+      els.snacksTabBtn.addEventListener('click', function() {
+        switchTab('snacks');
       });
       els.suggestionsTabBtn.addEventListener('click', function() {
         switchTab('suggestions');
