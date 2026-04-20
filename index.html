@@ -134,6 +134,27 @@
   background: var(--accent-soft);
 }
 
+.badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  margin-top: 6px;
+}
+
+.badge.top {
+  background: #fff4d6;         /* soft orange */
+  border: 1px solid var(--accent);
+  color: #7a5b00;
+}
+
+.badge.hated {
+  background: #fde8e8;         /* soft red */
+  border: 1px solid #fca5a5;
+  color: #7f1d1d;
+}
+    
     .thumb {
       width: 72px;
       height: 72px;
@@ -817,6 +838,20 @@ snackFormMessage: document.getElementById('snackFormMessage'),
       return { average: average, count: count };
     }
 
+    function getRatingBadge(average, count) {
+  if (count < 3 || average === null) return '';
+
+  if (average >= 4.5) {
+    return '<div class="badge top">⭐ Top Rated</div>';
+  }
+
+  if (average <= 2.0) {
+    return '<div class="badge hated">💀 Most Hated</div>';
+  }
+
+  return '';
+}
+
     function getSnackRatings(snackId) {
   return state.snackRatings.filter(function(rating) {
     return rating.snack_id === snackId;
@@ -903,18 +938,20 @@ function getSnackStats(snackId) {
 
       els.beerList.innerHTML = filtered.map(function(beer) {
         const stats = getBeerStats(beer.id);
-        const avgText = stats.average === null ? 'No ratings yet' : stats.average.toFixed(1) + ' avg';
-        const countText = stats.count + ' rating' + (stats.count === 1 ? '' : 's');
+const avgText = stats.average === null ? 'No ratings yet' : stats.average.toFixed(1) + ' avg';
+const countText = stats.count + ' rating' + (stats.count === 1 ? '' : 's');
+const badge = getRatingBadge(stats.average, stats.count);
 
-        return '' +
-          '<button class="beer-card" type="button" data-beer-id="' + beer.id + '">' +
-            getImageMarkup(beer.thumbnail, beer.beer_name, 'thumb') +
-            '<div style="text-align:left;">' +
-              '<div class="beer-name">' + escapeHtml(beer.beer_name) + '</div>' +
-              '<div class="beer-company">' + escapeHtml(beer.company) + '</div>' +
-              '<div class="small-meta">' + avgText + ' • ' + countText + '</div>' +
-            '</div>' +
-          '</button>';
+return '' +
+  '<button class="beer-card" type="button" data-beer-id="' + beer.id + '">' +
+    getImageMarkup(beer.thumbnail, beer.beer_name, 'thumb') +
+    '<div style="text-align:left;">' +
+      '<div class="beer-name">' + escapeHtml(beer.beer_name) + '</div>' +
+      '<div class="beer-company">' + escapeHtml(beer.company) + '</div>' +
+      '<div class="small-meta">' + avgText + ' • ' + countText + '</div>' +
+      badge +
+    '</div>' +
+  '</button>';
       }).join('');
 
       Array.from(els.beerList.querySelectorAll('[data-beer-id]')).forEach(function(button) {
@@ -950,15 +987,17 @@ function getSnackStats(snackId) {
     const stats = getSnackStats(snack.id);
     const avgText = stats.average === null ? 'No ratings yet' : stats.average.toFixed(1) + ' avg';
     const countText = stats.count + ' rating' + (stats.count === 1 ? '' : 's');
+    const badge = getRatingBadge(stats.average, stats.count);
 
     return '' +
       '<button class="beer-card" type="button" data-snack-id="' + snack.id + '">' +
         getImageMarkup(snack.thumbnail, snack.snack_name, 'thumb') +
         '<div style="text-align:left;">' +
-          '<div class="beer-name">' + escapeHtml(snack.snack_name) + '</div>' +
-          '<div class="beer-company">' + escapeHtml(snack.brand) + '</div>' +
-          '<div class="small-meta">' + avgText + ' • ' + countText + '</div>' +
-        '</div>' +
+  '<div class="beer-name">' + escapeHtml(snack.snack_name) + '</div>' +
+  '<div class="beer-company">' + escapeHtml(snack.brand) + '</div>' +
+  '<div class="small-meta">' + avgText + ' • ' + countText + '</div>' +
+  badge +
+'</div>' +
       '</button>';
   }).join('');
 
