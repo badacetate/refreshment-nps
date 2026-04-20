@@ -306,6 +306,14 @@
       color: var(--muted);
     }
 
+    .section-subtitle {
+  font-size: 0.85rem;
+  color: #98a2b3;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
     .footer-note {
       color: var(--muted);
       font-size: 0.82rem;
@@ -487,6 +495,7 @@
     <div id="userView">
       <div class="top-actions">
         <strong>Rate a beer</strong>
+        <div class="section-subtitle">Supplied by SIP 🍻</div>
         <div style="display:flex; gap:8px; align-items:center;">
           <span id="beerCountLabel" class="muted"></span>
           <button id="adminToggleBtn" class="chip" type="button">Add Beer</button>
@@ -507,6 +516,7 @@
     <div id="snacksUserView">
       <div class="top-actions">
         <strong>Rate a snack</strong>
+        <div class="section-subtitle">Supplied by Costco 🛒</div>
         <div style="display:flex; gap:8px; align-items:center;">
           <span id="snackCountLabel" class="muted"></span>
           <button id="adminToggleSnackBtn" class="chip" type="button">Add Snack</button>
@@ -528,12 +538,16 @@
       <span id="suggestionCountLabel" class="muted"></span>
     </div>
 
+    <div class="section-subtitle">
+  Snacks are sourced from Costco 🛒 and beers from SIP 🍻
+</div>
+
     <div class="divider"></div>
 
     <form id="suggestionForm" class="form-grid">
       <label>
         Suggestion
-        <input id="suggestionInput" type="text" placeholder="e.g. Local IPA, Doritos, Sapporo" required />
+        <input id="suggestionInput" type="text" placeholder="e.g. Costco snacks or SIP beers you'd like to try" required />
       </label>
       <button class="btn secondary" type="submit">Submit suggestion</button>
       <div id="suggestionMessage" class="success hidden"></div>
