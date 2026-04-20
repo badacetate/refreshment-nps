@@ -1270,12 +1270,15 @@ function closeSnackAdmin() {
 }
 
     async function upvoteSuggestion(suggestionId, currentUpvotes) {
+  console.log('UPVOTE CLICKED', suggestionId, currentUpvotes);
+
   const nextUpvotes = Number(currentUpvotes || 0) + 1;
 
-  const { error } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from('suggestions')
     .update({ upvotes: nextUpvotes })
-    .eq('id', suggestionId);
+    .eq('id', suggestionId)
+    .select();
 
   if (error) {
     console.error('Error upvoting suggestion:', error);
@@ -1283,6 +1286,7 @@ function closeSnackAdmin() {
     return;
   }
 
+  console.log('UPVOTE SUCCESS', data);
   await fetchSuggestions();
 }
     
@@ -1322,12 +1326,6 @@ function closeSnackAdmin() {
         '</div>' +
       '</div>';
   }).join('');
-
-  Array.from(els.suggestionList.querySelectorAll('[data-suggestion-id]')).forEach(function(button) {
-    button.addEventListener('click', function() {
-      upvoteSuggestion(button.dataset.suggestionId, button.dataset.upvotes);
-    });
-  });
 }
 
     function switchTab(tabName) {
@@ -1390,6 +1388,12 @@ function closeSnackAdmin() {
 els.closeSnackModalBtn.addEventListener('click', closeSnackAdmin);
 els.snackModalBackdrop.addEventListener('click', closeSnackAdmin);
 els.snackForm.addEventListener('submit', addSnack);
+      els.suggestionList.addEventListener('click', function(event) {
+  const button = event.target.closest('[data-suggestion-id]');
+  if (!button) return;
+
+  upvoteSuggestion(button.dataset.suggestionId, button.dataset.upvotes);
+});
     }
 
    async function init() {
