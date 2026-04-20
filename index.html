@@ -421,63 +421,69 @@
       <button id="suggestionsTabBtn" class="tab-btn" type="button">Suggestions</button>
     </div>
 
-    <section id="beersTab" class="tab-panel">
-      <section id="userView" class="panel">
-        <div class="top-actions">
-  <strong>Rate a beer</strong>
-  <div style="display:flex; gap:8px; align-items:center;">
-    <span id="beerCountLabel" class="muted"></span>
-    <button id="adminToggleBtn" class="chip" type="button">Add Beer</button>
-  </div>
-</div>
-
-        <input id="searchInput" class="search" type="text" placeholder="Search by company or beer name" />
-        <div id="ratingSuccess" class="success hidden"></div>
-        <div class="home-help">Search and browse the list, then tap a beer to rate it.</div>
-        <div id="beerList" class="beer-list"></div>
-      </section>
-    </section>
-
-    <section id="snacksTab" class="tab-panel hidden">
-  <section id="snacksUserView" class="panel">
-    <div class="top-actions">
-      <strong>Rate a snack</strong>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <span id="snackCountLabel" class="muted"></span>
-        <button id="adminToggleSnackBtn" class="chip" type="button">Add Snack</button>
+   <section id="beersTab" class="tab-panel">
+  <div class="panel">
+    <div id="userView">
+      <div class="top-actions">
+        <strong>Rate a beer</strong>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span id="beerCountLabel" class="muted"></span>
+          <button id="adminToggleBtn" class="chip" type="button">Add Beer</button>
+        </div>
       </div>
-    </div>
 
-    <input id="snackSearchInput" class="search" type="text" placeholder="Search by brand or snack name" />
-    <div class="home-help">Search and browse the list, then tap a snack to rate it.</div>
-    <div id="snackList" class="beer-list"></div>
-  </section>
+      <input id="searchInput" class="search" type="text" placeholder="Search by company or beer name" />
+      <div id="ratingSuccess" class="success hidden"></div>
+      <div class="home-help">Search and browse the list, then tap a beer to rate it.</div>
+      <div id="beerList" class="beer-list"></div>
+    </div>
+  </div>
 </section>
 
-    <section id="suggestionsTab" class="tab-panel hidden">
-      <div class="panel">
-        <strong>Suggest a beer</strong>
-        <div class="subtitle">What should we order next?</div>
-        <div class="divider"></div>
-        <form id="suggestionForm" class="form-grid">
-          <label>
-            Suggestion
-            <input id="suggestionInput" type="text" placeholder="e.g. Local IPA, Guinness, Sapporo" required />
-          </label>
-          <button class="btn secondary" type="submit">Submit suggestion</button>
-          <div id="suggestionMessage" class="success hidden"></div>
-        </form>
-      </div>
 
-      <div class="panel">
-        <div class="top-actions">
-          <strong>Suggestions</strong>
-          <span id="suggestionCountLabel" class="muted"></span>
+<section id="snacksTab" class="tab-panel hidden">
+  <div class="panel">
+    <div id="snacksUserView">
+      <div class="top-actions">
+        <strong>Rate a snack</strong>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span id="snackCountLabel" class="muted"></span>
+          <button id="adminToggleSnackBtn" class="chip" type="button">Add Snack</button>
         </div>
-        <div id="suggestionList" class="suggestion-list"></div>
       </div>
-    </section>
 
+      <input id="snackSearchInput" class="search" type="text" placeholder="Search by brand or snack name" />
+      <div class="home-help">Search and browse the list, then tap a snack to rate it.</div>
+      <div id="snackList" class="beer-list"></div>
+    </div>
+  </div>
+</section>
+
+
+<section id="suggestionsTab" class="tab-panel hidden">
+  <div class="panel">
+    <div class="top-actions">
+      <strong>Suggestions</strong>
+      <span id="suggestionCountLabel" class="muted"></span>
+    </div>
+
+    <div class="divider"></div>
+
+    <form id="suggestionForm" class="form-grid">
+      <label>
+        Suggestion
+        <input id="suggestionInput" type="text" placeholder="e.g. Local IPA, Doritos, Sapporo" required />
+      </label>
+      <button class="btn secondary" type="submit">Submit suggestion</button>
+      <div id="suggestionMessage" class="success hidden"></div>
+    </form>
+
+    <div class="divider"></div>
+
+    <div id="suggestionList" class="suggestion-list"></div>
+  </div>
+</section>
+    
     <section id="ratingView" class="panel hidden">
       <div class="rating-wrap">
         <button id="backToListBtn" class="btn secondary" type="button">Back to list</button>
