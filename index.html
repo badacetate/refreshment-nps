@@ -380,17 +380,44 @@
     }
 
     .suggestion-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px 14px;
-    }
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
 
-    .suggestion-date {
-      color: var(--muted);
-      font-size: 0.82rem;
-      margin-top: 6px;
-    }
+.suggestion-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.suggestion-text {
+  flex: 1;
+}
+
+.suggestion-upvote-btn {
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.suggestion-upvote-btn:hover {
+  background: #eef2f6;
+}
+
+.suggestion-date {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 6px;
+}
 
     @media (max-width: 560px) {
       .selected-beer,
@@ -1217,12 +1244,13 @@ function closeSnackAdmin() {
   if (!value) return;
 
   const { error } = await supabaseClient
-    .from('suggestions')
-    .insert([
-      {
-        text: value
-      }
-    ]);
+  .from('suggestions')
+  .insert([
+    {
+      text: value,
+      upvotes: 0
+    }
+  ]);
 
   if (error) {
     console.error('Error adding suggestion:', error);
@@ -1241,6 +1269,22 @@ function closeSnackAdmin() {
   }, 1800);
 }
 
+    async function upvoteSuggestion(suggestionId, currentUpvotes) {
+  const nextUpvotes = Number(currentUpvotes || 0) + 1;
+
+  const { error } = await supabaseClient
+    .from('suggestions')
+    .update({ upvotes: nextUpvotes })
+    .eq('id', suggestionId);
+
+  if (error) {
+    console.error('Error upvoting suggestion:', error);
+    alert('Failed to upvote suggestion');
+    return;
+  }
+
+  await fetchSuggestions();
+}
     
 
     function formatSuggestionDate(value) {
@@ -1254,22 +1298,37 @@ function closeSnackAdmin() {
     }
 
     function renderSuggestions() {
-      const suggestions = state.suggestions.slice();
-      els.suggestionCountLabel.textContent = suggestions.length + ' suggestion' + (suggestions.length === 1 ? '' : 's');
+  const suggestions = state.suggestions.slice();
+  els.suggestionCountLabel.textContent = suggestions.length + ' suggestion' + (suggestions.length === 1 ? '' : 's');
 
-      if (suggestions.length === 0) {
-        els.suggestionList.innerHTML = '<div class="empty-state">No suggestions yet.</div>';
-        return;
-      }
+  if (suggestions.length === 0) {
+    els.suggestionList.innerHTML = '<div class="empty-state">No suggestions yet.</div>';
+    return;
+  }
 
-      els.suggestionList.innerHTML = suggestions.map(function(item) {
-        return '' +
-          '<div class="suggestion-card">' +
+  els.suggestionList.innerHTML = suggestions.map(function(item) {
+    const upvotes = Number(item.upvotes || 0);
+
+    return '' +
+      '<div class="suggestion-card">' +
+        '<div class="suggestion-row">' +
+          '<div class="suggestion-text">' +
             '<div>' + escapeHtml(item.text) + '</div>' +
             '<div class="suggestion-date">' + formatSuggestionDate(item.created_at) + '</div>' +
-          '</div>';
-      }).join('');
-    }
+          '</div>' +
+          '<button class="suggestion-upvote-btn" type="button" data-suggestion-id="' + item.id + '" data-upvotes="' + upvotes + '">' +
+            '👍 ' + upvotes +
+          '</button>' +
+        '</div>' +
+      '</div>';
+  }).join('');
+
+  Array.from(els.suggestionList.querySelectorAll('[data-suggestion-id]')).forEach(function(button) {
+    button.addEventListener('click', function() {
+      upvoteSuggestion(button.dataset.suggestionId, button.dataset.upvotes);
+    });
+  });
+}
 
     function switchTab(tabName) {
   state.activeTab = tabName;
