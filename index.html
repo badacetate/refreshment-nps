@@ -379,9 +379,9 @@
     }
 
     .tab-btn.active {
-  background: var(--teal-soft);
-  border-color: var(--teal);
-  color: var(--teal);
+  background: #f2f4f7;   /* light grey */
+  border-color: #d0d5dd; /* slightly stronger border */
+  color: var(--text);    /* keep black text */
 }
 
     .suggestion-list {
@@ -969,37 +969,45 @@ function getSnackStats(snackId) {
 }
 
     function openRating(beerId) {
-      state.selectedBeerId = beerId;
-      state.selectedSnackId = null;
+  state.selectedBeerId = beerId;
+  state.selectedSnackId = null;
   state.selectedType = 'beer';
-      const beer = state.beers.find(function(item) {
-        return item.id === beerId;
-      });
-      if (!beer) return;
 
-      els.userView.classList.add('hidden');
-      els.addBeerModal.classList.add('hidden');
-      els.ratingView.classList.remove('hidden');
-      els.singleRateSuccess.classList.add('hidden');
-      els.singleRateSuccess.textContent = '';
+  const beer = state.beers.find(function(item) {
+    return item.id === beerId;
+  });
+  if (!beer) return;
 
-      els.selectedBeerContainer.innerHTML = '' +
-        getImageMarkup(beer.thumbnail, beer.beer_name, 'selected-thumb') +
-        '<div>' +
-          '<div class="beer-name" style="font-size:1.2rem;">' + escapeHtml(beer.beer_name) + '</div>' +
-          '<div class="beer-company">' + escapeHtml(beer.company) + '</div>' +
-        '</div>';
+  els.userView.classList.add('hidden');
+  els.snacksUserView.classList.add('hidden');
 
-      els.ratingButtons.innerHTML = [1, 2, 3, 4, 5].map(function(score) {
-        return '<button class="rate-btn" type="button" data-score="' + score + '">' + score + '</button>';
-      }).join('');
+  els.beersTab.classList.add('hidden');
+  els.snacksTab.classList.add('hidden');
+  els.suggestionsTab.classList.add('hidden');
 
-      Array.from(els.ratingButtons.querySelectorAll('[data-score]')).forEach(function(button) {
-        button.addEventListener('click', function() {
-          submitRating(Number(button.dataset.score));
-        });
-      });
-    }
+  els.addBeerModal.classList.add('hidden');
+  els.addSnackModal.classList.add('hidden');
+  els.ratingView.classList.remove('hidden');
+  els.singleRateSuccess.classList.add('hidden');
+  els.singleRateSuccess.textContent = '';
+
+  els.selectedBeerContainer.innerHTML = '' +
+    getImageMarkup(beer.thumbnail, beer.beer_name, 'selected-thumb') +
+    '<div>' +
+      '<div class="beer-name" style="font-size:1.2rem;">' + escapeHtml(beer.beer_name) + '</div>' +
+      '<div class="beer-company">' + escapeHtml(beer.company) + '</div>' +
+    '</div>';
+
+  els.ratingButtons.innerHTML = [1, 2, 3, 4, 5].map(function(score) {
+    return '<button class="rate-btn" type="button" data-score="' + score + '">' + score + '</button>';
+  }).join('');
+
+  Array.from(els.ratingButtons.querySelectorAll('[data-score]')).forEach(function(button) {
+    button.addEventListener('click', function() {
+      submitRating(Number(button.dataset.score));
+    });
+  });
+}
 
     function openSnackRating(snackId) {
   state.selectedSnackId = snackId;
@@ -1011,7 +1019,14 @@ function getSnackStats(snackId) {
   });
   if (!snack) return;
 
+  els.userView.classList.add('hidden');
   els.snacksUserView.classList.add('hidden');
+
+  els.beersTab.classList.add('hidden');
+  els.snacksTab.classList.add('hidden');
+  els.suggestionsTab.classList.add('hidden');
+
+  els.addBeerModal.classList.add('hidden');
   els.addSnackModal.classList.add('hidden');
   els.ratingView.classList.remove('hidden');
   els.singleRateSuccess.classList.add('hidden');
