@@ -523,6 +523,38 @@
       </div>
     </div>
 
+    <div id="addSnackModal" class="modal hidden">
+  <div class="modal-backdrop" id="snackModalBackdrop"></div>
+  <div class="modal-card panel">
+    <div class="top-actions">
+      <strong>Add snack</strong>
+      <button id="closeSnackModalBtn" class="btn secondary" type="button">Close</button>
+    </div>
+    <div class="subtitle">Add a snack to the list so people can rate it.</div>
+    <div class="divider"></div>
+    <form id="snackForm" class="form-grid">
+      <label>
+        Brand
+        <input id="snackBrandInput" type="text" placeholder="e.g. Old Dutch" required />
+      </label>
+
+      <label>
+        Snack name
+        <input id="snackNameInput" type="text" placeholder="e.g. Ketchup Chips" required />
+      </label>
+
+      <label>
+        Thumbnail image
+        <input id="snackThumbnailInput" type="file" accept="image/*" />
+      </label>
+      <div class="admin-help">Optional. Upload an image up to 2 MB and it will be stored with the snack.</div>
+
+      <button class="btn" type="submit">Add snack</button>
+      <div id="snackFormMessage" class="success hidden"></div>
+    </form>
+  </div>
+</div>
+
     <div class="footer-note">Liquid time and feelin' fine!</div>
   </div>
 
@@ -667,6 +699,14 @@ snackCountLabel: document.getElementById('snackCountLabel'),
 adminToggleSnackBtn: document.getElementById('adminToggleSnackBtn'),
       ratingView: document.getElementById('ratingView'),
       addBeerModal: document.getElementById('addBeerModal'),
+      addSnackModal: document.getElementById('addSnackModal'),
+snackModalBackdrop: document.getElementById('snackModalBackdrop'),
+closeSnackModalBtn: document.getElementById('closeSnackModalBtn'),
+snackForm: document.getElementById('snackForm'),
+snackBrandInput: document.getElementById('snackBrandInput'),
+snackNameInput: document.getElementById('snackNameInput'),
+snackThumbnailInput: document.getElementById('snackThumbnailInput'),
+snackFormMessage: document.getElementById('snackFormMessage'),
       beerList: document.getElementById('beerList'),
       suggestionList: document.getElementById('suggestionList'),
       selectedBeerContainer: document.getElementById('selectedBeerContainer'),
@@ -885,6 +925,8 @@ function getSnackStats(snackId) {
 
     function openRating(beerId) {
       state.selectedBeerId = beerId;
+      state.selectedSnackId = null;
+  state.selectedType = 'beer';
       const beer = state.beers.find(function(item) {
         return item.id === beerId;
       });
@@ -914,43 +956,124 @@ function getSnackStats(snackId) {
       });
     }
 
+    function openSnackRating(snackId) {
+  state.selectedSnackId = snackId;
+  state.selectedBeerId = null;
+  state.selectedType = 'snack';
+
+  const snack = state.snacks.find(function(item) {
+    return String(item.id) === String(snackId);
+  });
+  if (!snack) return;
+
+  els.snacksUserView.classList.add('hidden');
+  els.addSnackModal.classList.add('hidden');
+  els.ratingView.classList.remove('hidden');
+  els.singleRateSuccess.classList.add('hidden');
+  els.singleRateSuccess.textContent = '';
+
+  els.selectedBeerContainer.innerHTML = '' +
+    getImageMarkup(snack.thumbnail, snack.snack_name, 'selected-thumb') +
+    '<div>' +
+      '<div class="beer-name" style="font-size:1.2rem;">' + escapeHtml(snack.snack_name) + '</div>' +
+      '<div class="beer-company">' + escapeHtml(snack.brand) + '</div>' +
+    '</div>';
+
+  els.ratingButtons.innerHTML = [1, 2, 3, 4, 5].map(function(score) {
+    return '<button class="rate-btn" type="button" data-score="' + score + '">' + score + '</button>';
+  }).join('');
+
+  Array.from(els.ratingButtons.querySelectorAll('[data-score]')).forEach(function(button) {
+    button.addEventListener('click', function() {
+      submitRating(Number(button.dataset.score));
+    });
+  });
+}
+
 async function submitRating(score) {
-  if (!state.selectedBeerId) return;
   if (score < 1 || score > 5) return;
 
-  const { error } = await supabaseClient
-    .from('ratings')
-    .insert([
-      {
-        beer_id: state.selectedBeerId,
-        score: score
-      }
-    ]);
+  if (state.selectedType === 'beer') {
+    if (!state.selectedBeerId) return;
 
-  if (error) {
-    console.error('Error saving rating:', error);
-    alert('Failed to save rating');
+    const { error } = await supabaseClient
+      .from('ratings')
+      .insert([
+        {
+          beer_id: state.selectedBeerId,
+          score: score
+        }
+      ]);
+
+    if (error) {
+      console.error('Error saving beer rating:', error);
+      alert('Failed to save rating');
+      return;
+    }
+
+    await fetchRatings();
+
+    els.singleRateSuccess.textContent = 'Saved. You rated this beer ' + score + '/5.';
+    els.singleRateSuccess.classList.remove('hidden');
     return;
   }
 
-  await fetchRatings();
+  if (state.selectedType === 'snack') {
+    if (!state.selectedSnackId) return;
 
-  els.singleRateSuccess.textContent = 'Saved. You rated this beer ' + score + '/5.';
-  els.singleRateSuccess.classList.remove('hidden');
+    const { error } = await supabaseClient
+      .from('snack_ratings')
+      .insert([
+        {
+          snack_id: state.selectedSnackId,
+          score: score
+        }
+      ]);
+
+    if (error) {
+      console.error('Error saving snack rating:', error);
+      alert('Failed to save rating');
+      return;
+    }
+
+    await fetchSnackRatings();
+
+    els.singleRateSuccess.textContent = 'Saved. You rated this snack ' + score + '/5.';
+    els.singleRateSuccess.classList.remove('hidden');
+  }
 }
 
     function closeRatingView() {
   state.selectedBeerId = null;
+  state.selectedSnackId = null;
+
   els.ratingView.classList.add('hidden');
-  els.userView.classList.remove('hidden');
+  els.addBeerModal.classList.add('hidden');
+  els.addSnackModal.classList.add('hidden');
 
   if (state.activeTab === 'beers') {
+    els.userView.classList.remove('hidden');
+    els.snacksUserView.classList.add('hidden');
     els.beersTab.classList.remove('hidden');
-  } else {
-    els.suggestionsTab.classList.remove('hidden');
+    els.snacksTab.classList.add('hidden');
+    els.suggestionsTab.classList.add('hidden');
+    return;
   }
 
-  els.addBeerModal.classList.add('hidden');
+  if (state.activeTab === 'snacks') {
+    els.userView.classList.add('hidden');
+    els.snacksUserView.classList.remove('hidden');
+    els.beersTab.classList.add('hidden');
+    els.snacksTab.classList.remove('hidden');
+    els.suggestionsTab.classList.add('hidden');
+    return;
+  }
+
+  els.userView.classList.remove('hidden');
+  els.snacksUserView.classList.add('hidden');
+  els.beersTab.classList.add('hidden');
+  els.snacksTab.classList.add('hidden');
+  els.suggestionsTab.classList.remove('hidden');
 }
 
     function openAdmin() {
@@ -961,6 +1084,15 @@ async function submitRating(score) {
     function closeAdmin() {
       els.addBeerModal.classList.add('hidden');
     }
+
+    function openSnackAdmin() {
+  els.addSnackModal.classList.remove('hidden');
+  els.ratingView.classList.add('hidden');
+}
+
+function closeSnackAdmin() {
+  els.addSnackModal.classList.add('hidden');
+}
 
     async function addBeer(event) {
   event.preventDefault();
@@ -1012,6 +1144,63 @@ async function submitRating(score) {
 
   setTimeout(function() {
     els.beerFormMessage.classList.add('hidden');
+  }, 1500);
+}
+    async function addSnack(event) {
+  event.preventDefault();
+
+  const brand = els.snackBrandInput.value.trim();
+  const snackName = els.snackNameInput.value.trim();
+  const imageFile = els.snackThumbnailInput.files && els.snackThumbnailInput.files[0]
+    ? els.snackThumbnailInput.files[0]
+    : null;
+
+  if (!brand || !snackName) {
+    alert('Brand and snack name are required.');
+    return;
+  }
+
+  if (imageFile && imageFile.size > MAX_IMAGE_SIZE_BYTES) {
+    alert('Image must be 2 MB or smaller.');
+    return;
+  }
+
+  let thumbnailUrl = null;
+
+  if (imageFile) {
+    try {
+      thumbnailUrl = await uploadBeerImage(imageFile);
+    } catch (error) {
+      alert('Image upload failed');
+      return;
+    }
+  }
+
+  const { error } = await supabaseClient
+    .from('snacks')
+    .insert([
+      {
+        brand: brand,
+        snack_name: snackName,
+        thumbnail_url: thumbnailUrl
+      }
+    ]);
+
+  if (error) {
+    console.error('Error adding snack:', error);
+    alert('Failed to add snack');
+    return;
+  }
+
+  els.snackForm.reset();
+  els.snackFormMessage.textContent = 'Snack added.';
+  els.snackFormMessage.classList.remove('hidden');
+
+  await fetchSnacks();
+  closeSnackAdmin();
+
+  setTimeout(function() {
+    els.snackFormMessage.classList.add('hidden');
   }, 1500);
 }
 
@@ -1091,7 +1280,11 @@ async function submitRating(score) {
   els.snacksTabBtn.classList.toggle('active', isSnacks);
   els.suggestionsTabBtn.classList.toggle('active', isSuggestions);
 
+  els.userView.classList.remove('hidden');
+  els.snacksUserView.classList.remove('hidden');
+
   els.addBeerModal.classList.add('hidden');
+  els.addSnackModal.classList.add('hidden');
   els.ratingView.classList.add('hidden');
 }
 
@@ -1125,6 +1318,13 @@ async function submitRating(score) {
       els.suggestionsTabBtn.addEventListener('click', function() {
         switchTab('suggestions');
       });
+      els.adminToggleSnackBtn.addEventListener('click', function() {
+  openSnackAdmin();
+});
+
+els.closeSnackModalBtn.addEventListener('click', closeSnackAdmin);
+els.snackModalBackdrop.addEventListener('click', closeSnackAdmin);
+els.snackForm.addEventListener('submit', addSnack);
     }
 
    async function init() {
