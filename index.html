@@ -12,9 +12,11 @@
   --text: #0f172a;
   --muted: #667085;
 
-  --accent: #00D6BA;
-  --accent-soft: #E6FBF8;
-  --highlight: #FFAE00;
+  --accent: #FFAE00;        /* orange now primary */
+  --accent-soft: #FFF4D6;   /* soft orange */
+
+  --teal: #00D6BA;
+  --teal-soft: #E6FBF8;
 
   --danger: #dc2626;
   --ok: #15803d;
@@ -377,9 +379,9 @@
     }
 
     .tab-btn.active {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--teal-soft);
+  border-color: var(--teal);
+  color: var(--teal);
 }
 
     .suggestion-list {
@@ -453,10 +455,10 @@
     </div>
 
     <div class="tabs">
-      <button id="beersTabBtn" class="tab-btn active" type="button">Beers</button>
-      <button id="snacksTabBtn" class="tab-btn" type="button">Snacks</button>
-      <button id="suggestionsTabBtn" class="tab-btn" type="button">Suggestions</button>
-    </div>
+  <button id="beersTabBtn" class="tab-btn active" type="button">🍺 Beers</button>
+  <button id="snacksTabBtn" class="tab-btn" type="button">🍿 Snacks</button>
+  <button id="suggestionsTabBtn" class="tab-btn" type="button">💡 Suggestions</button>
+</div>
 
    <section id="beersTab" class="tab-panel">
   <div class="panel">
@@ -1279,24 +1281,28 @@ function closeSnackAdmin() {
   }, 1800);
 }
 
-    async function upvoteSuggestion(suggestionId, currentUpvotes) {
-  console.log('UPVOTE CLICKED', suggestionId, currentUpvotes);
-
+    async function upvoteSuggestion(suggestionId, currentUpvotes, button) {
   const nextUpvotes = Number(currentUpvotes || 0) + 1;
 
-  const { data, error } = await supabaseClient
+  // 🔥 THIS IS THE MICRO-FEEDBACK
+  button.textContent = '👍 ' + nextUpvotes;
+  button.dataset.upvotes = nextUpvotes;
+
+  const { error } = await supabaseClient
     .from('suggestions')
     .update({ upvotes: nextUpvotes })
-    .eq('id', suggestionId)
-    .select();
+    .eq('id', suggestionId);
 
   if (error) {
     console.error('Error upvoting suggestion:', error);
-    alert('Failed to upvote suggestion');
+
+    // revert if something breaks
+    button.textContent = '👍 ' + currentUpvotes;
+    button.dataset.upvotes = currentUpvotes;
+
     return;
   }
 
-  console.log('UPVOTE SUCCESS', data);
   await fetchSuggestions();
 }
     
@@ -1402,7 +1408,11 @@ els.snackForm.addEventListener('submit', addSnack);
   const button = event.target.closest('[data-suggestion-id]');
   if (!button) return;
 
-  upvoteSuggestion(button.dataset.suggestionId, button.dataset.upvotes);
+  upvoteSuggestion(
+    button.dataset.suggestionId,
+    button.dataset.upvotes,
+    button // 👈 THIS is the only addition
+  );
 });
     }
 
