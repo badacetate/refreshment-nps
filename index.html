@@ -409,9 +409,8 @@
       <div class="title-row">
         <div>
           <h1>Refreshment NPS</h1>
-          <div class="subtitle">Try beers, rate them... profit!</div>
+          <div class="subtitle">Try beers & snacks, rate them... profit!</div>
         </div>
-        <button id="adminToggleBtn" class="chip" type="button">Add Beer</button>
       </div>
     </div>
 
@@ -423,9 +422,12 @@
     <section id="beersTab" class="tab-panel">
       <section id="userView" class="panel">
         <div class="top-actions">
-          <strong>Rate a beer</strong>
-          <span id="beerCountLabel" class="muted"></span>
-        </div>
+  <strong>Rate a beer</strong>
+  <div style="display:flex; gap:8px; align-items:center;">
+    <span id="beerCountLabel" class="muted"></span>
+    <button id="adminToggleBtn" class="chip" type="button">Add Beer</button>
+  </div>
+</div>
 
         <input id="searchInput" class="search" type="text" placeholder="Search by company or beer name" />
         <div id="ratingSuccess" class="success hidden"></div>
