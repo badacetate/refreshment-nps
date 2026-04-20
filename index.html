@@ -442,18 +442,15 @@
   <section id="snacksUserView" class="panel">
     <div class="top-actions">
       <strong>Rate a snack</strong>
-      <span class="muted">0 snacks</span>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span id="snackCountLabel" class="muted"></span>
+        <button id="adminToggleSnackBtn" class="chip" type="button">Add Snack</button>
+      </div>
     </div>
 
-    <input class="search" type="text" placeholder="Search snacks (coming soon)" />
-
-    <div class="home-help">
-      Snacks tab coming next — same idea as beers.
-    </div>
-
-    <div class="empty-state">
-      No snacks yet.
-    </div>
+    <input id="snackSearchInput" class="search" type="text" placeholder="Search by brand or snack name" />
+    <div class="home-help">Search and browse the list, then tap a snack to rate it.</div>
+    <div id="snackList" class="beer-list"></div>
   </section>
 </section>
 
@@ -596,6 +593,45 @@ async function fetchSuggestions() {
   state.ratings = data || [];
   renderBeerList();
 }
+
+async function fetchSnacks() {
+  const { data, error } = await supabaseClient
+    .from('snacks')
+    .select('*')
+    .order('brand', { ascending: true })
+    .order('snack_name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching snacks:', error);
+    return;
+  }
+
+  state.snacks = (data || []).map(function(item) {
+    return {
+      id: item.id,
+      brand: item.brand,
+      snack_name: item.snack_name,
+      thumbnail: item.thumbnail_url || ''
+    };
+  });
+
+  renderSnackList();
+}
+
+async function fetchSnackRatings() {
+  const { data, error } = await supabaseClient
+    .from('snack_ratings')
+    .select('*');
+
+  if (error) {
+    console.error('Error fetching snack ratings:', error);
+    return;
+  }
+
+  state.snackRatings = data || [];
+  renderSnackList();
+}
+
     
     const STORAGE_KEYS = {
       beers: 'beerRatingsMvp_beers',
@@ -605,12 +641,16 @@ async function fetchSuggestions() {
 
     
     const state = {
-      beers: [],
-      ratings: [],
-      suggestions: [],
-      selectedBeerId: null,
-      activeTab: 'beers'
-    };
+  beers: [],
+  ratings: [],
+  snacks: [],
+  snackRatings: [],
+  suggestions: [],
+  selectedBeerId: null,
+  selectedSnackId: null,
+  selectedType: 'beer',
+  activeTab: 'beers'
+};
 
     const els = {
       userView: document.getElementById('userView'),
@@ -620,6 +660,11 @@ async function fetchSuggestions() {
       suggestionsTabBtn: document.getElementById('suggestionsTabBtn'),
       snacksTab: document.getElementById('snacksTab'),
       snacksTabBtn: document.getElementById('snacksTabBtn'),
+      snacksUserView: document.getElementById('snacksUserView'),
+snackSearchInput: document.getElementById('snackSearchInput'),
+snackList: document.getElementById('snackList'),
+snackCountLabel: document.getElementById('snackCountLabel'),
+adminToggleSnackBtn: document.getElementById('adminToggleSnackBtn'),
       ratingView: document.getElementById('ratingView'),
       addBeerModal: document.getElementById('addBeerModal'),
       beerList: document.getElementById('beerList'),
@@ -685,6 +730,24 @@ async function fetchSuggestions() {
 
       return { average: average, count: count };
     }
+
+    function getSnackRatings(snackId) {
+  return state.snackRatings.filter(function(rating) {
+    return rating.snack_id === snackId;
+  });
+}
+
+function getSnackStats(snackId) {
+  const ratings = getSnackRatings(snackId);
+  const count = ratings.length;
+  const average = count === 0
+    ? null
+    : ratings.reduce(function(sum, rating) {
+        return sum + rating.score;
+      }, 0) / count;
+
+  return { average: average, count: count };
+}
 
     function escapeHtml(value) {
       return String(value)
@@ -774,6 +837,51 @@ async function fetchSuggestions() {
         });
       });
     }
+
+    function renderSnackList() {
+  const query = els.snackSearchInput.value.trim().toLowerCase();
+
+  const sortedSnacks = state.snacks.slice().sort(function(a, b) {
+    const brandCompare = a.brand.localeCompare(b.brand);
+    if (brandCompare !== 0) return brandCompare;
+    return a.snack_name.localeCompare(b.snack_name);
+  });
+
+  const filtered = sortedSnacks.filter(function(snack) {
+    if (!query) return true;
+    const haystack = (snack.brand + ' ' + snack.snack_name).toLowerCase();
+    return haystack.indexOf(query) !== -1;
+  });
+
+  els.snackCountLabel.textContent = filtered.length + ' snack' + (filtered.length === 1 ? '' : 's');
+
+  if (filtered.length === 0) {
+    els.snackList.innerHTML = '<div class="empty-state">No snacks found for that search.</div>';
+    return;
+  }
+
+  els.snackList.innerHTML = filtered.map(function(snack) {
+    const stats = getSnackStats(snack.id);
+    const avgText = stats.average === null ? 'No ratings yet' : stats.average.toFixed(1) + ' avg';
+    const countText = stats.count + ' rating' + (stats.count === 1 ? '' : 's');
+
+    return '' +
+      '<button class="beer-card" type="button" data-snack-id="' + snack.id + '">' +
+        getImageMarkup(snack.thumbnail, snack.snack_name, 'thumb') +
+        '<div style="text-align:left;">' +
+          '<div class="beer-name">' + escapeHtml(snack.snack_name) + '</div>' +
+          '<div class="beer-company">' + escapeHtml(snack.brand) + '</div>' +
+          '<div class="small-meta">' + avgText + ' • ' + countText + '</div>' +
+        '</div>' +
+      '</button>';
+  }).join('');
+
+  Array.from(els.snackList.querySelectorAll('[data-snack-id]')).forEach(function(button) {
+    button.addEventListener('click', function() {
+      openSnackRating(button.dataset.snackId);
+    });
+  });
+}
 
     function openRating(beerId) {
       state.selectedBeerId = beerId;
@@ -999,6 +1107,7 @@ async function submitRating(score) {
 
     function bindEvents() {
       els.searchInput.addEventListener('input', renderBeerList);
+      els.snackSearchInput.addEventListener('input', renderSnackList);
       els.backToListBtn.addEventListener('click', closeRatingView);
       els.adminToggleBtn.addEventListener('click', function() {
         openAdmin();
@@ -1022,8 +1131,10 @@ async function submitRating(score) {
   bindEvents();
   switchTab('beers');
   await fetchBeers();
+  await fetchSnacks();
   await fetchSuggestions();
   await fetchRatings();
+  await fetchSnackRatings();
   testSupabase();
 }
 
