@@ -505,7 +505,15 @@
       <input id="searchInput" class="search" type="text" placeholder="Search by company or beer name" />
       <div id="ratingSuccess" class="success hidden"></div>
       <div class="home-help">Search and browse the list, then tap a beer to rate it.</div>
-      <div id="beerList" class="beer-list"></div>
+
+<div class="sort-row">
+  <button id="beerSortAlphaAsc" class="sort-btn active" type="button">A–Z</button>
+  <button id="beerSortAlphaDesc" class="sort-btn" type="button">Z–A</button>
+  <button id="beerSortRatingDesc" class="sort-btn" type="button">Top Rated</button>
+  <button id="beerSortRatingAsc" class="sort-btn" type="button">Lowest Rated</button>
+</div>
+
+<div id="beerList" class="beer-list"></div>
     </div>
   </div>
 </section>
@@ -525,7 +533,15 @@
 
       <input id="snackSearchInput" class="search" type="text" placeholder="Search by brand or snack name" />
       <div class="home-help">Search and browse the list, then tap a snack to rate it.</div>
-      <div id="snackList" class="beer-list"></div>
+
+<div class="sort-row">
+  <button id="snackSortAlphaAsc" class="sort-btn active" type="button">A–Z</button>
+  <button id="snackSortAlphaDesc" class="sort-btn" type="button">Z–A</button>
+  <button id="snackSortRatingDesc" class="sort-btn" type="button">Top Rated</button>
+  <button id="snackSortRatingAsc" class="sort-btn" type="button">Lowest Rated</button>
+</div>
+
+<div id="snackList" class="beer-list"></div>
     </div>
   </div>
 </section>
@@ -764,11 +780,21 @@ async function fetchSnackRatings() {
   selectedBeerId: null,
   selectedSnackId: null,
   selectedType: 'beer',
-  activeTab: 'beers'
+  activeTab: 'beers',
+  beerSort: 'alpha-asc',
+  snackSort: 'alpha-asc'
 };
 
-    const els = {
-      userView: document.getElementById('userView'),
+   const els = {
+  userView: document.getElementById('userView'),
+  beerSortAlphaAsc: document.getElementById('beerSortAlphaAsc'),
+  beerSortAlphaDesc: document.getElementById('beerSortAlphaDesc'),
+  beerSortRatingDesc: document.getElementById('beerSortRatingDesc'),
+  beerSortRatingAsc: document.getElementById('beerSortRatingAsc'),
+  snackSortAlphaAsc: document.getElementById('snackSortAlphaAsc'),
+  snackSortAlphaDesc: document.getElementById('snackSortAlphaDesc'),
+  snackSortRatingDesc: document.getElementById('snackSortRatingDesc'),
+  snackSortRatingAsc: document.getElementById('snackSortRatingAsc'),
       beersTab: document.getElementById('beersTab'),
       suggestionsTab: document.getElementById('suggestionsTab'),
       beersTabBtn: document.getElementById('beersTabBtn'),
@@ -886,6 +912,49 @@ function getSnackStats(snackId) {
   return { average: average, count: count };
 }
 
+    function updateBeerSortButtons() {
+  els.beerSortAlphaAsc.classList.toggle('active', state.beerSort === 'alpha-asc');
+  els.beerSortAlphaDesc.classList.toggle('active', state.beerSort === 'alpha-desc');
+  els.beerSortRatingDesc.classList.toggle('active', state.beerSort === 'rating-desc');
+  els.beerSortRatingAsc.classList.toggle('active', state.beerSort === 'rating-asc');
+}
+
+function updateSnackSortButtons() {
+  els.snackSortAlphaAsc.classList.toggle('active', state.snackSort === 'alpha-asc');
+  els.snackSortAlphaDesc.classList.toggle('active', state.snackSort === 'alpha-desc');
+  els.snackSortRatingDesc.classList.toggle('active', state.snackSort === 'rating-desc');
+  els.snackSortRatingAsc.classList.toggle('active', state.snackSort === 'rating-asc');
+}
+
+function compareAlpha(a, b, aSecondary, bSecondary) {
+  const first = a.localeCompare(b);
+  if (first !== 0) return first;
+  return aSecondary.localeCompare(bSecondary);
+}
+
+function compareRating(statsA, statsB, direction, fallbackA, fallbackB, fallbackA2, fallbackB2) {
+  const aHasRating = statsA.average !== null;
+  const bHasRating = statsB.average !== null;
+
+  if (aHasRating && !bHasRating) return -1;
+  if (!aHasRating && bHasRating) return 1;
+  if (!aHasRating && !bHasRating) {
+    return compareAlpha(fallbackA, fallbackB, fallbackA2, fallbackB2);
+  }
+
+  if (statsA.average !== statsB.average) {
+    return direction === 'desc'
+      ? statsB.average - statsA.average
+      : statsA.average - statsB.average;
+  }
+
+  if (statsA.count !== statsB.count) {
+    return statsB.count - statsA.count;
+  }
+
+  return compareAlpha(fallbackA, fallbackB, fallbackA2, fallbackB2);
+}
+
     function escapeHtml(value) {
       return String(value)
         .replace(/&/g, '&amp;')
@@ -934,10 +1003,27 @@ function getSnackStats(snackId) {
       const query = els.searchInput.value.trim().toLowerCase();
 
       const sortedBeers = state.beers.slice().sort(function(a, b) {
-        const companyCompare = a.company.localeCompare(b.company);
-        if (companyCompare !== 0) return companyCompare;
-        return a.beer_name.localeCompare(b.beer_name);
-      });
+  const statsA = getBeerStats(a.id);
+  const statsB = getBeerStats(b.id);
+
+  if (state.beerSort === 'alpha-asc') {
+    return compareAlpha(a.company, b.company, a.beer_name, b.beer_name);
+  }
+
+  if (state.beerSort === 'alpha-desc') {
+    return compareAlpha(b.company, a.company, b.beer_name, a.beer_name);
+  }
+
+  if (state.beerSort === 'rating-desc') {
+    return compareRating(statsA, statsB, 'desc', a.company, b.company, a.beer_name, b.beer_name);
+  }
+
+  if (state.beerSort === 'rating-asc') {
+    return compareRating(statsA, statsB, 'asc', a.company, b.company, a.beer_name, b.beer_name);
+  }
+
+  return compareAlpha(a.company, b.company, a.beer_name, b.beer_name);
+});
 
       const filtered = sortedBeers.filter(function(beer) {
         if (!query) return true;
@@ -975,16 +1061,34 @@ return '' +
           openRating(button.dataset.beerId);
         });
       });
+      updateBeerSortButtons();
     }
 
     function renderSnackList() {
   const query = els.snackSearchInput.value.trim().toLowerCase();
 
   const sortedSnacks = state.snacks.slice().sort(function(a, b) {
-    const brandCompare = a.brand.localeCompare(b.brand);
-    if (brandCompare !== 0) return brandCompare;
-    return a.snack_name.localeCompare(b.snack_name);
-  });
+  const statsA = getSnackStats(a.id);
+  const statsB = getSnackStats(b.id);
+
+  if (state.snackSort === 'alpha-asc') {
+    return compareAlpha(a.brand, b.brand, a.snack_name, b.snack_name);
+  }
+
+  if (state.snackSort === 'alpha-desc') {
+    return compareAlpha(b.brand, a.brand, b.snack_name, a.snack_name);
+  }
+
+  if (state.snackSort === 'rating-desc') {
+    return compareRating(statsA, statsB, 'desc', a.brand, b.brand, a.snack_name, b.snack_name);
+  }
+
+  if (state.snackSort === 'rating-asc') {
+    return compareRating(statsA, statsB, 'asc', a.brand, b.brand, a.snack_name, b.snack_name);
+  }
+
+  return compareAlpha(a.brand, b.brand, a.snack_name, b.snack_name);
+});
 
   const filtered = sortedSnacks.filter(function(snack) {
     if (!query) return true;
@@ -1022,6 +1126,7 @@ return '' +
       openSnackRating(button.dataset.snackId);
     });
   });
+      updateSnackSortButtons();
 }
 
     function openRating(beerId) {
@@ -1484,6 +1589,45 @@ els.snackForm.addEventListener('submit', addSnack);
     button.dataset.upvotes,
     button // 👈 THIS is the only addition
   );
+});
+      els.beerSortAlphaAsc.addEventListener('click', function() {
+  state.beerSort = 'alpha-asc';
+  renderBeerList();
+});
+
+els.beerSortAlphaDesc.addEventListener('click', function() {
+  state.beerSort = 'alpha-desc';
+  renderBeerList();
+});
+
+els.beerSortRatingDesc.addEventListener('click', function() {
+  state.beerSort = 'rating-desc';
+  renderBeerList();
+});
+
+els.beerSortRatingAsc.addEventListener('click', function() {
+  state.beerSort = 'rating-asc';
+  renderBeerList();
+});
+
+els.snackSortAlphaAsc.addEventListener('click', function() {
+  state.snackSort = 'alpha-asc';
+  renderSnackList();
+});
+
+els.snackSortAlphaDesc.addEventListener('click', function() {
+  state.snackSort = 'alpha-desc';
+  renderSnackList();
+});
+
+els.snackSortRatingDesc.addEventListener('click', function() {
+  state.snackSort = 'rating-desc';
+  renderSnackList();
+});
+
+els.snackSortRatingAsc.addEventListener('click', function() {
+  state.snackSort = 'rating-asc';
+  renderSnackList();
 });
     }
 
