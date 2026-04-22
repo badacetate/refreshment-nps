@@ -104,11 +104,12 @@
     }
 
     .search:focus,
-    input:focus,
-    button:focus {
-      outline: 2px solid rgba(15, 23, 42, 0.12);
-      outline-offset: 2px;
-    }
+input:focus,
+select:focus,
+button:focus {
+  outline: 2px solid rgba(15, 23, 42, 0.12);
+  outline-offset: 2px;
+}
 
     .beer-list {
       display: grid;
@@ -284,14 +285,15 @@
       color: var(--text);
     }
 
-    input {
-      border: 1px solid var(--border);
-      background: var(--panel);
-      color: var(--text);
-      padding: 14px 14px;
-      border-radius: 14px;
-      font-size: 1rem;
-    }
+    input,
+select {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  padding: 14px 14px;
+  border-radius: 14px;
+  font-size: 1rem;
+}
 
     .success {
       background: #ecfdf3;
@@ -607,11 +609,19 @@
           </label>
 
           <label>
-            Beer name
-            <input id="beerNameInput" type="text" placeholder="e.g. Duff Beer" required />
-          </label>
+  Beer name
+  <input id="beerNameInput" type="text" placeholder="e.g. Duff Beer" required />
+</label>
 
-          <label>
+<label>
+  Drink type
+  <select id="drinkTypeInput" required>
+    <option value="beer">Beer</option>
+    <option value="non-beer">Non-beer</option>
+  </select>
+</label>
+
+<label>
   Thumbnail image
   <input id="thumbnailInput" type="file" accept="image/*" />
 </label>
@@ -688,13 +698,14 @@
 }
 
   state.beers = (data || []).map(function(item) {
-    return {
-      id: item.id,
-      company: item.company,
-      beer_name: item.beer_name,
-      thumbnail: item.thumbnail_url || ''
-    };
-  });
+  return {
+    id: item.id,
+    company: item.company,
+    beer_name: item.beer_name,
+    thumbnail: item.thumbnail_url || '',
+    drink_type: item.drink_type || 'beer'
+  };
+});
 
   renderBeerList();
 }
@@ -831,7 +842,8 @@ snackFormMessage: document.getElementById('snackFormMessage'),
       beerForm: document.getElementById('beerForm'),
       companyInput: document.getElementById('companyInput'),
       beerNameInput: document.getElementById('beerNameInput'),
-      thumbnailInput: document.getElementById('thumbnailInput'),
+drinkTypeInput: document.getElementById('drinkTypeInput'),
+thumbnailInput: document.getElementById('thumbnailInput'),
       beerFormMessage: document.getElementById('beerFormMessage'),
       ratingSuccess: document.getElementById('ratingSuccess'),
       singleRateSuccess: document.getElementById('singleRateSuccess'),
@@ -915,18 +927,8 @@ function getSnackStats(snackId) {
   return { average: average, count: count };
 }
     
-    function getDrinkMeta(beerName, company) {
-  const name = (beerName + ' ' + company).toLowerCase();
-
-  const beerKeywords = [
-    'beer', 'lager', 'ipa', 'pilsner', 'stout', 'ale', 'porter', 'wheat', 'sour'
-  ];
-
-  const isBeer = beerKeywords.some(function(keyword) {
-    return name.includes(keyword);
-  });
-
-  return isBeer ? '🍺 Beer' : '🍹 Non-beer';
+    function getDrinkMeta(drinkType) {
+  return drinkType === 'non-beer' ? '🍹 Non-beer' : '🍺 Beer';
 }
 
     function getSessionUpvotedSuggestions() {
@@ -1093,7 +1095,7 @@ return '' +
     '<div style="text-align:left;">' +
       '<div class="beer-name">' + escapeHtml(beer.beer_name) + '</div>' +
       '<div class="beer-company">' + escapeHtml(beer.company) + '</div>' +
-'<div class="small-meta">' + getDrinkMeta(beer.beer_name, beer.company) + '</div>' +
+'<div class="small-meta">' + getDrinkMeta(beer.drink_type) + '</div>' +
 '<div class="small-meta">' + avgText + ' • ' + countText + '</div>' +
 badge +
     '</div>' +
@@ -1363,10 +1365,11 @@ function closeSnackAdmin() {
   event.preventDefault();
 
   const company = els.companyInput.value.trim();
-  const beerName = els.beerNameInput.value.trim();
-  const imageFile = els.thumbnailInput.files && els.thumbnailInput.files[0]
-    ? els.thumbnailInput.files[0]
-    : null;
+const beerName = els.beerNameInput.value.trim();
+const drinkType = els.drinkTypeInput.value;
+const imageFile = els.thumbnailInput.files && els.thumbnailInput.files[0]
+  ? els.thumbnailInput.files[0]
+  : null;
 
   if (!company || !beerName) {
     alert('Company and beer name are required.');
@@ -1385,14 +1388,15 @@ function closeSnackAdmin() {
   }
 
   const { error } = await supabaseClient
-    .from('beers')
-    .insert([
-      {
-        company: company,
-        beer_name: beerName,
-        thumbnail_url: thumbnailUrl
-      }
-    ]);
+  .from('beers')
+  .insert([
+    {
+      company: company,
+      beer_name: beerName,
+      drink_type: drinkType,
+      thumbnail_url: thumbnailUrl
+    }
+  ]);
 
   if (error) {
     console.error('Error adding beer:', error);
