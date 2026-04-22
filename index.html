@@ -440,14 +440,17 @@
 
 .suggestion-upvote-btn {
   border: 1px solid var(--border);
-  background: #f8fafc;
-  color: var(--text);
+  background: #fff;
   border-radius: 999px;
-  padding: 8px 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  padding: 6px 10px;
+  font-size: 0.85rem;
   cursor: pointer;
-  white-space: nowrap;
+}
+
+.suggestion-upvote-btn.is-disabled,
+.suggestion-upvote-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .suggestion-upvote-btn:hover {
@@ -911,6 +914,46 @@ function getSnackStats(snackId) {
 
   return { average: average, count: count };
 }
+    
+    function getDrinkMeta(beerName, company) {
+  const name = (beerName + ' ' + company).toLowerCase();
+
+  const beerKeywords = [
+    'beer', 'lager', 'ipa', 'pilsner', 'stout', 'ale', 'porter', 'wheat', 'sour'
+  ];
+
+  const isBeer = beerKeywords.some(function(keyword) {
+    return name.includes(keyword);
+  });
+
+  return isBeer ? '🍺 Beer' : '🍹 Non-beer';
+}
+
+    function getSessionUpvotedSuggestions() {
+  try {
+    return JSON.parse(sessionStorage.getItem('upvotedSuggestions') || '[]');
+  } catch (error) {
+    return [];
+  }
+}
+
+function setSessionUpvotedSuggestions(ids) {
+  sessionStorage.setItem('upvotedSuggestions', JSON.stringify(ids));
+}
+
+function hasUpvotedSuggestion(id) {
+  return getSessionUpvotedSuggestions().includes(String(id));
+}
+
+function markSuggestionUpvoted(id) {
+  const ids = getSessionUpvotedSuggestions();
+  const stringId = String(id);
+
+  if (!ids.includes(stringId)) {
+    ids.push(stringId);
+    setSessionUpvotedSuggestions(ids);
+  }
+}
 
     function updateBeerSortButtons() {
   els.beerSortAlphaAsc.classList.toggle('active', state.beerSort === 'alpha-asc');
@@ -1050,8 +1093,9 @@ return '' +
     '<div style="text-align:left;">' +
       '<div class="beer-name">' + escapeHtml(beer.beer_name) + '</div>' +
       '<div class="beer-company">' + escapeHtml(beer.company) + '</div>' +
-      '<div class="small-meta">' + avgText + ' • ' + countText + '</div>' +
-      badge +
+'<div class="small-meta">' + getDrinkMeta(beer.beer_name, beer.company) + '</div>' +
+'<div class="small-meta">' + avgText + ' • ' + countText + '</div>' +
+badge +
     '</div>' +
   '</button>';
       }).join('');
@@ -1460,9 +1504,10 @@ function closeSnackAdmin() {
     async function upvoteSuggestion(suggestionId, currentUpvotes, button) {
   const nextUpvotes = Number(currentUpvotes || 0) + 1;
 
-  // 🔥 THIS IS THE MICRO-FEEDBACK
-  button.textContent = '👍 ' + nextUpvotes;
+  button.textContent = '👍 ' + nextUpvotes + ' • Voted';
   button.dataset.upvotes = nextUpvotes;
+  button.disabled = true;
+  button.classList.add('is-disabled');
 
   const { error } = await supabaseClient
     .from('suggestions')
@@ -1471,14 +1516,14 @@ function closeSnackAdmin() {
 
   if (error) {
     console.error('Error upvoting suggestion:', error);
-
-    // revert if something breaks
     button.textContent = '👍 ' + currentUpvotes;
     button.dataset.upvotes = currentUpvotes;
-
+    button.disabled = false;
+    button.classList.remove('is-disabled');
     return;
   }
 
+  markSuggestionUpvoted(suggestionId);
   await fetchSuggestions();
 }
     
@@ -1504,19 +1549,20 @@ function closeSnackAdmin() {
 
   els.suggestionList.innerHTML = suggestions.map(function(item) {
     const upvotes = Number(item.upvotes || 0);
+const alreadyVoted = hasUpvotedSuggestion(item.id);
 
-    return '' +
-      '<div class="suggestion-card">' +
-        '<div class="suggestion-row">' +
-          '<div class="suggestion-text">' +
-            '<div>' + escapeHtml(item.text) + '</div>' +
-            '<div class="suggestion-date">' + formatSuggestionDate(item.created_at) + '</div>' +
-          '</div>' +
-          '<button class="suggestion-upvote-btn" type="button" data-suggestion-id="' + item.id + '" data-upvotes="' + upvotes + '">' +
-            '👍 ' + upvotes +
-          '</button>' +
-        '</div>' +
-      '</div>';
+return '' +
+  '<div class="suggestion-card">' +
+    '<div class="suggestion-row">' +
+      '<div class="suggestion-text">' +
+        '<div>' + escapeHtml(item.text) + '</div>' +
+        '<div class="suggestion-date">' + formatSuggestionDate(item.created_at) + '</div>' +
+      '</div>' +
+      '<button class="suggestion-upvote-btn' + (alreadyVoted ? ' is-disabled' : '') + '" type="button" data-suggestion-id="' + item.id + '" data-upvotes="' + upvotes + '" ' + (alreadyVoted ? 'disabled' : '') + '>' +
+        '👍 ' + upvotes + (alreadyVoted ? ' • Voted' : '') +
+      '</button>' +
+    '</div>' +
+  '</div>';
   }).join('');
 }
 
@@ -1584,10 +1630,12 @@ els.snackForm.addEventListener('submit', addSnack);
   const button = event.target.closest('[data-suggestion-id]');
   if (!button) return;
 
+  if (hasUpvotedSuggestion(button.dataset.suggestionId)) return;
+
   upvoteSuggestion(
     button.dataset.suggestionId,
     button.dataset.upvotes,
-    button // 👈 THIS is the only addition
+    button
   );
 });
       els.beerSortAlphaAsc.addEventListener('click', function() {
